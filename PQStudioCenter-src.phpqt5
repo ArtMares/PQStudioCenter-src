@@ -1,6 +1,7 @@
 {
     "version": "1.0",
     "config": [
+        "QT += svg"
     ],
 
     "build": {
@@ -33,6 +34,8 @@
         "core:QVariant",
         "core:QString",
         "core:QEvent",
+        "core:QTimer",
+        "core:QTimerEvent",
         "core:QPoint",
         "core:QDataStream",
         "core:QEasingCurve",
@@ -42,6 +45,8 @@
         "core:QSysInfo",
         "core:QSize",
         "core:QRect",
+        "core:QSystemSemaphore",
+        "core:QSharedMemory",
         "gui:QGuiApplication",
         "gui:QPaintDevice",
         "gui:QIcon",
@@ -54,6 +59,8 @@
         "gui:QPixmap",
         "gui:QCursor",
         "widgets:QApplication",
+        "widgets:QAction",
+        "widgets:QMenu",
         "widgets:QSystemTrayIcon",
         "widgets:QAbstractButton",
         "widgets:QFrame",
@@ -68,8 +75,10 @@
         "widgets:QTextEdit",
         "widgets:QPlainTextEdit",
         "widgets:QDesktopWidget",
+        "widgets:QGraphicsEffect",
+        "widgets:QGraphicsOpacityEffect",
         "network:QAbstractSocket",
-        "network:QLocalSocket",
+        "network:QLocalServer",
         "plastiq:PQEventFilter"
     ]
 }
