@@ -48,6 +48,8 @@
         "core:QSystemSemaphore",
         "core:QSharedMemory",
         "gui:QGuiApplication",
+        "gui:QColor",
+        "gui:QPainter",
         "gui:QPaintDevice",
         "gui:QIcon",
         "gui:QContextMenuEvent",
