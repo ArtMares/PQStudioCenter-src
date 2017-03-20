@@ -94,7 +94,7 @@ class Notice extends QWidget {
         $this->layout()->addWidget($msg, $row, 0, 1, 3);
     }
     
-    private function cut(string $str, int $len) {
+    private function cut(string $str, int $len) : string {
         $str = new QString($str);
         if($str->length() > $len) {
             $str = new QString($str->left($len));
