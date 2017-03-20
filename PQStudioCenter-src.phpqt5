@@ -77,8 +77,7 @@
         "widgets:QTextEdit",
         "widgets:QPlainTextEdit",
         "widgets:QDesktopWidget",
-        "widgets:QGraphicsEffect",
-        "widgets:QGraphicsOpacityEffect",
+        "widgets:QScrollBar",
         "network:QAbstractSocket",
         "network:QLocalServer",
         "plastiq:PQEventFilter"

@@ -10,60 +10,102 @@ class Notice extends QWidget {
     const Unread    = 0x00;
     const Read      = 0x01;
     
-    static public $w;
+    const None      = 0x02;
+    const Success   = 0x03;
+    const Info      = 0x04;
+    const Warning   = 0x05;
+    const Error     = 0x06;
     
-    private $closeBtn;
-    
-    private $parentWidget;
-    
-    public function __construct($parent = null, $title, $message) {
+    public function __construct($parent = null, string $title, string $message, int $type = 0x02) {
         parent::__construct($parent);
-        
-        $this->parentWidget = $parent;
         
         $this->styleSheet = '
             QWidget {
-                border: 1px solid #c4c4c4;
+                font-family: "Akrobat";
+                font-size: 16px;
+                background: #393939;
             }
             QLabel {
-                font-size: 16px;
                 color: #c4c4c4;
+            }
+            QLabel#Title {
+                font-size: 18px;
             }
             QPushButton {
                 width: 16px;
                 height: 16px;
-                border-radius: 8px;
                 border: none;
-                background: #ffffff;
+                background: transparent;
             }
         ';
 
-        $this->closeBtn = new QPushButton($this);
-        
-        $icon = new QIcon(':/close.svg');
-        
-        $this->closeBtn->iconSize = new QSize(16, 16);
-        $this->closeBtn->setIcon($icon);
-        $this->closeBtn->setCursor(new QCursor(Qt::PointingHandCursor));
+        $closeBtn = new QPushButton($this);
+        $closeBtn->iconSize = new QSize(18, 18);
+        $closeBtn->setIcon(new QIcon(':/light-close.svg'));
+        $closeBtn->setCursor(new QCursor(Qt::PointingHandCursor));
+        $closeBtn->setMaximumWidth(20);
+        $closeBtn->onClicked = function($sender) {
+            $this->close();
+        };
         
         $this->setLayout(new QGridLayout());
         
-        $labelTitle = new QLabel($this);
-        $labelTitle->text = $title;
-        $labelTitle->objectName = 'Title';
-        $labelTitle->fontFamily = QFontDatabase::applicationFontFamilies($Akrobatblack)[0];
-    
-//        $this->layout()->setContentsMargins(0, 0, 0, 0);
-//        $this->layout()->setSpacing(0);
-        $this->layout()->addWidget($labelTitle, 0, 1);
-        $this->layout()->addWidget($this->closeBtn, 0, 2);
-        $this->layout()->setAlignment($this->closeBtn, Qt::AlignRight);
+        $icon = new QLabel($this);
+        $icon->setMaximumWidth(20);
+        switch($type) {
+            case self::Success:
+                $pixmap = new QIcon(':/success.svg');
+                $icon->setPixmap($pixmap->pixmap(20, 20));
+                break;
+            case self::Info:
+                $pixmap = new QIcon(':/info.svg');
+                $icon->setPixmap($pixmap->pixmap(20, 20));
+                break;
+            case self::Warning:
+                $pixmap = new QIcon(':/warning.svg');
+                $icon->setPixmap($pixmap->pixmap(20, 20));
+                break;
+            case self::Error:
+                $pixmap = new QIcon(':/error.svg');
+                $icon->setPixmap($pixmap->pixmap(20, 20));
+                break;
+            default:
+                $pixmap = new QIcon(':/none.svg');
+                $icon->setPixmap($pixmap->pixmap(20, 20));
+        }
+        
+        $Title = new QLabel($this);
+        $Title->text = $this->cut($title, 75);
+        $Title->wordWrap = true;
+        $Title->objectName = 'Title';
+        
+        $msg = new QLabel($this);
+        $msg->wordWrap = true;
+        $msg->text = $this->cut($message, 250);
+        
+        $row = 0;
+        $this->layout()->addWidget($icon, $row, 0);
+        $this->layout()->setAlignment($icon, Qt::AlignTop);
+        $this->layout()->addWidget($Title, $row, 1);
+        $this->layout()->addWidget($closeBtn, $row, 2);
+        $this->layout()->setAlignment($closeBtn, Qt::AlignTop);
+        
+        $row++;
+        $this->layout()->addWidget($msg, $row, 0, 1, 3);
     }
     
-    /** @override showEvent */
-    public function showEvent($event) {
-        $size = $this->size();
-        $size = new QSize(self::$w - 20, $size->height());
-        $this->resize($size);
+    private function cut(string $str, int $len) {
+        $str = new QString($str);
+        if($str->length() > $len) {
+            $str = new QString($str->left($len));
+            $str = new QString($str->left($str->lastIndexOf(' ')));
+            $str->append('...');
+        }
+        return $str->toUtf8();
+    }
+    
+    public function close() {
+        parent::close();
+        $this->free();
     }
 }

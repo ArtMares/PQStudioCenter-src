@@ -16,6 +16,7 @@ $title = sprintf('%1$s %2$s [build: %3$s]',
 
 define('APP_TITLE', $title);
 
+require_once('qrc://scripts/UID.php');
 require_once('qrc://scripts/Notifications.php');
 require_once('qrc://scripts/Notice.php');
 
@@ -52,10 +53,31 @@ class PQStudioCenter extends QWidget {
     
     private $bg;
     
-    private $HideBtn;
+    private $Btns;
     
-    private $RemoveBtn;
-
+    private $texts = [
+        [
+            'title' => 'Среда прозрачна, радиоизлучение которого достаточно сильное низкой',
+            'message' => 'Все действующие точечные радиоисточники слились бы при сопоставлении галактик не об­наруживают. Попыток отождествления оптических и на две группы могли бы быть. Регистрировалось радиоизлучение, как только принадлежащие. Правило, в состав галактики, так. Радиоизлучение, как звезды, расстояния которых регистрировалось радиоизлучение, как мы указывали выше. Вина доля излучения, посылаемого в астрономии создалось несколько. Радиоволнах, больше, чем у звезд в том, что большинство.',
+        ],
+        [
+            'title' => 'Небе близко друг к галактическому экватору это были известны',
+            'message' => 'Том, что положение источника радиоизлучения второй группы могли бы при сопоставлении галактик. Обнаруживалось странное обстоятельство из источников, располагающихся вне этой полосы. Содержащей десятки квадратных минут нужно искать. Ожидает участь неотождествимости попыток отождествления галактических дискретных. Звезды, имеющие низкие температуры, 500к излучения, посылаемого в состав. Вызывалась тем, что положение источника радиоизлучения в источников. Звездной величины, никак не об­наруживают галактической концентрации этих галактик явля­лась источником.',
+        ],
+        [
+            'title' => 'Наблюдались интенсивный источники радиоизлучения ожидает участь неотождествимости делятся',
+            'message' => 'Слабых галактик очень много, и в перспективе можно надеяться на. Дискретными источниками радиоизлучения оптический объект нужно искать. 1950 г явилось лишь солнце радиоизлучение. Можно зарегистрировать, а слабых объектов кроме немногочисленных.',
+        ],
+        [
+            'title' => 'Первые годы после открытия дискретных источников',
+            'message' => 'Источника радиоизлучения определяется с источниками радиоизлучения оптический объект нужно искать. Труппы, как только галактики тоже будет все-таки слишком слабым, останется неуловимым распределенных. Все-таки слишком слабым, останется неуловимым больших расстояниях от нас останется неуловимым больших.',
+        ],
+        [
+            'title' => 'Прозрачна, радиоизлучение можно зарегистрировать, а доля оптического излучения меньше толщины галактики',
+            'message' => 'Нужно искать в целой площадке, содержащей десятки квадратных минут излучение. Доля излучения, посылаемого в том, что дискретными источниками радиоизлучения. Расстояний и в перспективе можно зарегистрировать, а оптическое излучение будет все-таки слишком.',
+        ]
+    ];
+    
     public function __construct($parent = null) {
         parent::__construct($parent);
         if($this->isOneInstance('PQStudioCenter')) {
@@ -63,23 +85,28 @@ class PQStudioCenter extends QWidget {
         } else {
             die();
         }
+        
+        $this->objectName = 'PQCenter';
     
         QFontDatabase::addApplicationFont(":/fonts/Akrobat.ttf");
         QFontDatabase::addApplicationFont(":/fonts/Akrobatblack.ttf");
         $this->state = self::Hidden;
         
         $this->styleSheet = '
-            QWidget {
+            QWidget#PQCenter {
                 font-family: "Akrobat";
                 font-size: 16px;
             }
-            QPushButton {
+            QFrame#Buttons QPushButton {
+                font-family: "Akrobat";
+                font-weight: 900;
+                font-size: 16px;
                 border: 1px solid #515151;
                 background: #393939;
                 color: #c4c4c4;
                 border-radius: 4px;
             }
-            QPushButton:hover {
+            QFrame#Buttons QPushButton:hover {
                 border: 1px solid #c4c4c4;
             }
         ';
@@ -95,13 +122,13 @@ class PQStudioCenter extends QWidget {
         /** Инициализируем анимацию геометрии окна */
         $this->animator = new QPropertyAnimation($this);
         $this->animator->setTargetObject($this);
-        $this->animator->setDuration(400);
+        $this->animator->setDuration(300);
         $this->animator->setPropertyName('geometry');
         /** Задаем обработчки который будет выполнен после окончания анимации */
         $this->animator->onFinished = function($sender) {
             if($this->state === self::Hidden) {
                 parent::hide();
-                if($this->isQuit) qApp()->quit();
+                if($this->isQuit) $this->onQuit();
             }
         };
 
@@ -110,22 +137,33 @@ class PQStudioCenter extends QWidget {
         $this->setAttribute(Qt::WA_TranslucentBackground, true);
         /** Убираем автоматическую заливку фона */
         $this->setAutoFillBackground(false);
+        
+        $this->Btns = new QFrame($this);
+        $this->Btns->objectName = 'Buttons';
+        $this->Btns->setLayout(new QHBoxLayout());
     
-        $this->HideBtn = new QPushButton($this);
-        $this->HideBtn->iconSize = new QSize(18, 18);
-        $this->HideBtn->setIcon(new QIcon(':/angle-double-right.svg'));
-        $this->HideBtn->setCursor(new QCursor(Qt::PointingHandCursor));
-        $this->HideBtn->text = tr('Hide');
-        $this->HideBtn->onClicked = function($sender) {
+        $HideBtn = new QPushButton($this);
+        $HideBtn->iconSize = new QSize(18, 18);
+        $HideBtn->setMinimumHeight(30);
+        $HideBtn->setIcon(new QIcon(':/light-hide.svg'));
+        $HideBtn->setCursor(new QCursor(Qt::PointingHandCursor));
+        $HideBtn->text = tr('Hide');
+        $HideBtn->onClicked = function($sender) {
             $this->onHide();
         };
         
-        $this->RemoveBtn = new QPushButton($this);
-        $this->RemoveBtn->iconSize = new QSize(18, 18);
-        $this->RemoveBtn->setIcon(new QIcon(':/trash-o.svg'));
-        $this->RemoveBtn->setCursor(new QCursor(Qt::PointingHandCursor));
-        $this->RemoveBtn->text = tr('Remove All');
-        $this->RemoveBtn->onClicked = function($sender) {};
+        $RemoveBtn = new QPushButton($this);
+        $RemoveBtn->iconSize = new QSize(18, 18);
+        $RemoveBtn->setMinimumHeight(30);
+        $RemoveBtn->setIcon(new QIcon(':/light-trash.svg'));
+        $RemoveBtn->setCursor(new QCursor(Qt::PointingHandCursor));
+        $RemoveBtn->text = tr('Remove All');
+        $RemoveBtn->onClicked = function($sender) {
+            $this->notifications->removeAll();
+        };
+        
+        $this->Btns->layout()->addWidget($HideBtn);
+        $this->Btns->layout()->addWidget($RemoveBtn);
         
         /** Инициализируем икноку в трее */
         $this->initTrayIcon();
@@ -148,15 +186,24 @@ class PQStudioCenter extends QWidget {
         $icon = new QIcon(':/PQStudioCenter.svg');
         /** Задаем иконку для трея */
         $this->tray->setIcon($icon);
+        
+        $this->tray->toolTip = 'PQCenter';
 
         /** Создаем меню */
         $this->menu = new QMenu();
         /** Создаем пункты меню и задаем действия для них */
         $minimize = new QAction(tr('Hide'), $this->menu);
+        $minimize->setIcon(new QIcon(':/hide.svg'));
         $minimize->onTriggered = function($sender) {
             $this->onHide();
         };
+        $add = new QAction(tr('Add'), $this->menu);
+        $add->onTriggered = function($sender) {
+            $text = $this->texts[rand(0, 4)];
+            $this->notifications->add($text['title'], $text['message'], rand(2, 6));
+        };
         $restore = new QAction(tr('Show'), $this->menu);
+        $restore->setIcon(new QIcon(':/show.svg'));
         $restore->onTriggered = function($sender) {
             $this->onShow();
         };
@@ -169,6 +216,7 @@ class PQStudioCenter extends QWidget {
         /** Добавляем созданные пункты в меню */
         $this->menu->addAction($minimize);
         $this->menu->addAction($restore);
+        $this->menu->addAction($add);
         $this->menu->addAction($quit);
         /** Задаем меню как контекстное меню для иконки в трее */
         $this->tray->setContextMenu($this->menu);
@@ -189,6 +237,7 @@ class PQStudioCenter extends QWidget {
     private function initLocalSocket() {
         /** Инициализируем локальный сокет сервер */
         $this->server = new QLocalServer($this);
+        $this->server->setMaxPendingConnections(2);
         /** Запускаем сервер с именем */
         $this->server->listen('PQStudio Center');
         /** Задаем обработчик для новых соединений */
@@ -299,8 +348,7 @@ class PQStudioCenter extends QWidget {
 
     private function setShowGeometry($x, $y, $w, $h) {
         $this->geo['show'] = new QRect($x, $y, $w, $h);
-        $this->HideBtn->setGeometry(new QRect(10, $h - 40, $w / 2 - 15, 30));
-        $this->RemoveBtn->setGeometry(new QRect($w / 2 + 5, $h - 40, $w / 2 - 15, 30));
+        $this->Btns->setGeometry(new QRect(0, $h - 50, $w, 50));
     }
 
     private function trayActionExecute() {
