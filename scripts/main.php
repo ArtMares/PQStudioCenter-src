@@ -267,6 +267,7 @@ class PQStudioCenter extends QWidget {
     }
 
     private function slot_readData($socket) {
+        $data = $socket->readAll();
         
     }
 
