@@ -16,9 +16,18 @@ class Notice extends QWidget {
     const Warning   = 0x05;
     const Error     = 0x06;
     
-    public function __construct($parent = null, string $title, string $message, int $type = 0x02) {
+    protected $state;
+    
+    public function __construct($parent = null, string $title, string $message, int $level = 0x02) {
         parent::__construct($parent);
         
+        $this->initComponents($title, $message, $level);
+    }
+    
+    public function initComponents($title, $message, $level) {
+        $this->state = self::Unread;
+        $this->objectName = 'Notice';
+    
         $this->styleSheet = '
             QWidget {
                 font-family: "Akrobat";
@@ -31,15 +40,16 @@ class Notice extends QWidget {
             QLabel#Title {
                 font-size: 18px;
             }
-            QPushButton {
+            QPushButton#Close {
                 width: 16px;
                 height: 16px;
                 border: none;
                 background: transparent;
             }
-        ';
-
+            ';
+    
         $closeBtn = new QPushButton($this);
+        $closeBtn->objectName = 'Close';
         $closeBtn->iconSize = new QSize(18, 18);
         $closeBtn->setIcon(new QIcon(':/light-close.svg'));
         $closeBtn->setCursor(new QCursor(Qt::PointingHandCursor));
@@ -47,12 +57,12 @@ class Notice extends QWidget {
         $closeBtn->onClicked = function($sender) {
             $this->close();
         };
-        
+    
         $this->setLayout(new QGridLayout());
-        
+    
         $icon = new QLabel($this);
         $icon->setMaximumWidth(20);
-        switch($type) {
+        switch($level) {
             case self::Success:
                 $pixmap = new QIcon(':/success.svg');
                 $icon->setPixmap($pixmap->pixmap(20, 20));
@@ -73,28 +83,28 @@ class Notice extends QWidget {
                 $pixmap = new QIcon(':/none.svg');
                 $icon->setPixmap($pixmap->pixmap(20, 20));
         }
-        
-        $Title = new QLabel($this);
-        $Title->text = $this->cut($title, 75);
-        $Title->wordWrap = true;
-        $Title->objectName = 'Title';
-        
-        $msg = new QLabel($this);
-        $msg->wordWrap = true;
-        $msg->text = $this->cut($message, 250);
-        
+    
+        $labelTitle = new QLabel($this);
+        $labelTitle->text = $this->cut($title, 75);
+        $labelTitle->wordWrap = true;
+        $labelTitle->objectName = 'Title';
+    
+        $labelMsg = new QLabel($this);
+        $labelMsg->wordWrap = true;
+        $labelMsg->text = $this->cut($message, 250);
+    
         $row = 0;
         $this->layout()->addWidget($icon, $row, 0);
         $this->layout()->setAlignment($icon, Qt::AlignTop);
-        $this->layout()->addWidget($Title, $row, 1);
+        $this->layout()->addWidget($labelTitle, $row, 1);
         $this->layout()->addWidget($closeBtn, $row, 2);
         $this->layout()->setAlignment($closeBtn, Qt::AlignTop);
-        
+    
         $row++;
-        $this->layout()->addWidget($msg, $row, 0, 1, 3);
+        $this->layout()->addWidget($labelMsg, $row, 0, 1, 3);
     }
     
-    private function cut(string $str, int $len) : string {
+    protected function cut(string $str, int $len) : string {
         $str = new QString($str);
         if($str->length() > $len) {
             $str = new QString($str->left($len));
@@ -102,10 +112,5 @@ class Notice extends QWidget {
             $str->append('...');
         }
         return $str->toUtf8();
-    }
-    
-    public function close() {
-        parent::close();
-        $this->free();
     }
 }

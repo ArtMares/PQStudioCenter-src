@@ -20,7 +20,7 @@ require_once('qrc://scripts/UID.php');
 require_once('qrc://scripts/Notifications.php');
 require_once('qrc://scripts/Notice.php');
 
-class PQStudioCenter extends QWidget {
+class PQCenter extends QWidget {
     
     const Hidden    = 0x00;
     const Showed    = 0x01;
@@ -55,6 +55,10 @@ class PQStudioCenter extends QWidget {
     
     private $Btns;
     
+    private $timer;
+    
+    private $i = 1;
+    
     private $texts = [
         [
             'title' => 'Среда прозрачна, радиоизлучение которого достаточно сильное низкой',
@@ -80,7 +84,7 @@ class PQStudioCenter extends QWidget {
     
     public function __construct($parent = null) {
         parent::__construct($parent);
-        if($this->isOneInstance('PQStudioCenter')) {
+        if($this->isOneInstance('PQCenter')) {
             $this->initComponents();
         } else {
             die();
@@ -115,6 +119,11 @@ class PQStudioCenter extends QWidget {
     private function initComponents() {
         /** Получаем QDesktopWidget */
         $this->desktop = QApplication::desktop();
+        /** Отлавливаем изменение рабочей области и изменияем геометрию в соответствии */
+        $this->desktop->onWorkAreaResized = function($sender) {
+            $this->calculateGeometry();
+            if($this->state === self::Showed) $this->setGeometry($this->geo['show']);
+        };
         /** Задаем заголовок для окна */
         $this->setWindowTitle(APP_TITLE);
         /** Задаем цвет для заливки фона */
@@ -130,6 +139,13 @@ class PQStudioCenter extends QWidget {
                 parent::hide();
                 if($this->isQuit) $this->onQuit();
             }
+        };
+        
+        $this->timer = new QTimer();
+        $this->timer->interval = 200;
+        $this->timer->onTimeout = function($sender) {
+            $this->traySetIcon($this->i);
+            $this->i++;
         };
 
         /** Задаем флаг для типа окна */
@@ -182,10 +198,8 @@ class PQStudioCenter extends QWidget {
     private function initTrayIcon() {
         /** Инициализируем объект для отображения иконки в трее */
         $this->tray = new QSystemTrayIcon($this);
-        /** Создаем икноку из SVG */
-        $icon = new QIcon(':/PQStudioCenter.svg');
-        /** Задаем иконку для трея */
-        $this->tray->setIcon($icon);
+        
+        $this->traySetIcon($this->i);
         
         $this->tray->toolTip = 'PQCenter';
 
@@ -200,7 +214,7 @@ class PQStudioCenter extends QWidget {
         $add = new QAction(tr('Add'), $this->menu);
         $add->onTriggered = function($sender) {
             $text = $this->texts[rand(0, 4)];
-            $this->notifications->add($text['title'], $text['message'], rand(2, 6));
+            $this->addNotice($text['title'], $text['message'], rand(2, 6));
         };
         $restore = new QAction(tr('Show'), $this->menu);
         $restore->setIcon(new QIcon(':/show.svg'));
@@ -233,17 +247,21 @@ class PQStudioCenter extends QWidget {
             }
         };
     }
+    
+    private function traySetIcon($i) {
+        $this->tray->setIcon(new QIcon(':/logo/logo-step-'.($i % 2 === 0 ? 2 : 1).'.svg'));
+    }
 
     private function initLocalSocket() {
         /** Инициализируем локальный сокет сервер */
         $this->server = new QLocalServer($this);
-        $this->server->setMaxPendingConnections(2);
+//        $this->server->setMaxPendingConnections(2);
         /** Запускаем сервер с именем */
-        $this->server->listen('PQStudio Center');
+        $this->server->listen('PQCenter');
         /** Задаем обработчик для новых соединений */
         $this->server->onNewConnection = function() {
             /** Получаем соединение */
-            $socket = $this->server->naxtPendingConnection();
+            $socket = $this->server->nextPendingConnection();
             /** Задаем обработчик для чтения принимаемых данных от соединения */
             $socket->onReadyRead = function($sender) {
                 /** Читаем получаемые данные */
@@ -259,20 +277,11 @@ class PQStudioCenter extends QWidget {
         };
     }
 
-    public function slot_incomingConnection() {
-        $socket = $this->server->nextPendingConnection();
-        $socket->connect(SIGNAL('readyRead()'), $this, SLOT('slot_readData()'));
-
-        $this->sockets[] = $socket;
-    }
-
     private function slot_readData($socket) {
         $data = $socket->readAll();
-        
-    }
-
-    public function slot_trayIconActivated($sender, $reason) {
-        
+        qDenug($data);
+        $data = json_decode($data);
+        $this->addNotice($data->title, $data->massge, $data->level);
     }
 
     private function getResolution() : array {
@@ -312,8 +321,8 @@ class PQStudioCenter extends QWidget {
         if($area['W2'] < $area['W1']) {
             /** Ищем Панель Задач слева */
             if($area['X2'] > $area['X1']) {
-                $this->setHideGeometry($area['W1'], $area['Y1'], 0, $area['H1']);
-                $this->setShowGeometry($area['W1'] - $this->maxWidth, $area['Y1'], $this->maxWidth, $area['H1']);
+                $this->setHideGeometry($area['X2'], $area['Y1'], 0, $area['H1']);
+                $this->setShowGeometry($area['X2'], $area['Y1'], $this->maxWidth, $area['H1']);
             }
             /** Ищем Панель Задач справа */
             if($area['X2'] === $area['X1']) {
@@ -339,8 +348,11 @@ class PQStudioCenter extends QWidget {
             }
             $height = $area['H2'];
         }
-        
-        $this->notifications = new Notifications($this, $this->maxWidth, $height - 50);
+        if(is_null($this->notifications)) {
+            $this->notifications = new Notifications($this, $this->maxWidth, $height - 50);
+        } else {
+            $this->notifications->resize(new QSize($this->maxWidth, $height - 50));
+        }
     }
 
     private function setHideGeometry($x, $y, $w, $h) {
@@ -390,6 +402,9 @@ class PQStudioCenter extends QWidget {
             $this->animator->setStartValue($this->geo['hide']);
             $this->animator->setEndValue($this->geo['show']);
             $this->animator->start();
+            $this->timer->stop();
+            $this->i = 1;
+            $this->traySetIcon($this->i);
         }
     }
     
@@ -413,8 +428,17 @@ class PQStudioCenter extends QWidget {
             $this->onHide();
         }
     }
+    
+    private function addNotice($title, $message, $level) {
+        if($this->state === self::Hidden) $this->timer->start();
+        $this->notifications->add($title, $message, $level);
+    }
+    
+    private function showNotice($title, $message, $level) {
+//        if()
+    }
 }
 
-$window = new PQStudioCenter();
+$window = new PQCenter();
 
 return $app->exec();

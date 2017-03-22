@@ -7,7 +7,7 @@
  */
 class NoticeOutside extends Notice {
     
-    public function __construct($parent = null, $title, $message, $type) {
-        parent::__construct($parent, $title, $message, $type);
+    public function __construct($title, $message, $level) {
+        parent::__construct(null, $title, $message, $level);
     }
 }

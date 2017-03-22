@@ -14,8 +14,8 @@ class Notifications extends QScrollArea {
     
     private $list;
     
-    private $eventFilter;
-
+    private $eventNotice;
+    
     public function __construct($parent = null, int $width, int $height) {
         parent::__construct($parent);
         
@@ -86,12 +86,11 @@ class Notifications extends QScrollArea {
             }
         ';
         
-        $this->eventFilter = new PQEventFilter($this);
-        $this->eventFilter->addEventType(QEvent::Show);
-        $this->eventFilter->addEventType(QEvent::Close);
-        $this->installEventFilter($this->eventFilter);
+        $eventFilter = new PQEventFilter($this);
+        $eventFilter->addEventType(QEvent::Show);
+        $this->installEventFilter($eventFilter);
         
-        $this->eventFilter->onEvent = function($sender, $event) use($width, $height) {
+        $eventFilter->onEvent = function($sender, $event) use($width, $height) {
             switch($event->type()) {
                 case QEvent::Show:
                     if($this->firstShow) {
@@ -99,20 +98,24 @@ class Notifications extends QScrollArea {
                         $this->firstShow = !$this->firstShow;
                     }
                     break;
+            }
+        };
+        
+        $this->eventNotice = new PQEventFilter($this);
+        $this->eventNotice->addEventType(QEvent::Close);
+        $this->eventNotice->onEvent = function($sender, $event) {
+            switch($event->type()) {
                 case QEvent::Close:
-                    $class = get_class($sender);
-                    if($class === 'Notice') {
-                        $uid = array_search($sender, $this->stack);
-                        if($uid !== false) unset($this->stack[$uid]);
-                    }
+                    $this->removeFromStack(array_search($sender, $this->stack));
+                    break;
             }
         };
     }
     
     public function add($title, $message, $level) {
         $notice = new Notice($this->list, $title, $message, $level);
-        $notice->installEventFilter($this->eventFilter);
-        $uid = (new UID())->generate();
+        $notice->installEventFilter($this->eventNotice);
+        $uid = UID::new();
         $this->stack[$uid] = $notice;
         $notice->setVisible(true);
         $this->list->layout()->addWidget($notice);
@@ -122,5 +125,9 @@ class Notifications extends QScrollArea {
     
     public function removeAll() {
         foreach($this->stack as $notice) $notice->close();
+    }
+    
+    private function removeFromStack($uid = false) {
+        if($uid !== false) unset($this->stack[$uid]);
     }
 }
