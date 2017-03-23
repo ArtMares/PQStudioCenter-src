@@ -7,66 +7,64 @@
  */
 class Json {
     
-    protected $data = null;
-    
-    public function read($str) {
+    static public function read($str) {
         $json = QJsonDocument::fromJson($str);
         if(!$json->isNull()) {
-            $this->data = $this->parseToType($json);
+            return self::parseToType($json);
         }
-        return $this->data;
+        return null;
     }
     
-    private function parseToType($object) {
+    static private function parseToType(&$object) {
         $class = get_class($object);
         switch($class) {
             case 'QJsonDocument':
-                return $this->parseDocument($object);
+                return self::parseDocument($object);
                 break;
             case 'QJsonObject':
-                return $this->parseObject($object);
+                return self::parseObject($object);
                 break;
             case 'QJsonArray':
-                return $this->parseArray($object);
+                return self::parseArray($object);
                 break;
             case 'QJsonValue':
-                return $this->parseValue($object);
+                return self::parseValue($object);
                 break;
             default:
                 return null;
         }
     }
     
-    private function parseDocument($object) {
-        if($object->isObject()) return $this->parseToType($object->object());
-        if($object->isArray()) return $this->parseToType($object->array());
+    static private function parseDocument(&$object) {
+        if($object->isObject()) return self::parseToType($object->object());
+        if($object->isArray()) return self::parseToType($object->array());
         return null;
     }
     
-    private function parseObject($object) {
+    static private function parseObject(&$object) {
         if(!$object->isEmpty()) {
             $data = [];
             foreach($object->keys() as $key) {
-                $data[$key] = $this->parseToType($object->value($key));
+                $data[$key] = self::parseToType($object->value($key));
             }
             return $data;
         }
         return null;
     }
     
-    private function parseArray($object) {
+    static private function parseArray(&$object) {
         if(!$object->isEmpty()) {
             $n = $object->count();
             $data = [];
             for($i = 0; $i < $n; $i++) {
-                $data[$i] = $this->parseToType($object->at($i));
+                $data[$i] = self::parseToType($object->at($i));
             }
             return $data;
         }
         return null;
     }
     
-    private function parseValue($object) {
+    static private function parseValue(&$object) {
         switch($object->type()) {
             case QJsonValue::Bool:
                 return $object->toBool();
@@ -78,10 +76,10 @@ class Json {
                 return $object->toString();
                 break;
             case QJsonValue::Array:
-                return $this->parseArray($object->toArray());
+                return self::parseArray($object->toArray());
                 break;
             case QJsonValue::Obejct:
-                return $this->parseObject($object->toObject());
+                return self::parseObject($object->toObject());
                 break;
             default:
                 return null;

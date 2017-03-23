@@ -415,7 +415,7 @@ class PQCenter extends QWidget {
 
     private function onQuit() {
         $this->server->close();
-        foreach($this->sockets as $socket) $socket->close();
+//        foreach($this->sockets as $socket) $socket->disconnectFromServer();
         if($this->state === self::Hidden) {
             qApp()->quit();
         }
@@ -426,7 +426,7 @@ class PQCenter extends QWidget {
     }
     
     private function parseMsg($str) {
-        $data = (new Json())->read($str);
+        $data = Json::read($str);
         if(!is_null($data)) {
             $this->determineType($data);
         }
