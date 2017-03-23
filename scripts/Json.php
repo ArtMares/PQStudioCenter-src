@@ -15,7 +15,7 @@ class Json {
         return null;
     }
     
-    static private function parseToType(&$object) {
+    static private function parseToType($object) {
         $class = get_class($object);
         switch($class) {
             case 'QJsonDocument':
@@ -35,13 +35,13 @@ class Json {
         }
     }
     
-    static private function parseDocument(&$object) {
+    static private function parseDocument($object) {
         if($object->isObject()) return self::parseToType($object->object());
         if($object->isArray()) return self::parseToType($object->array());
         return null;
     }
     
-    static private function parseObject(&$object) {
+    static private function parseObject($object) {
         if(!$object->isEmpty()) {
             $data = [];
             foreach($object->keys() as $key) {
@@ -52,7 +52,7 @@ class Json {
         return null;
     }
     
-    static private function parseArray(&$object) {
+    static private function parseArray($object) {
         if(!$object->isEmpty()) {
             $n = $object->count();
             $data = [];
@@ -64,7 +64,7 @@ class Json {
         return null;
     }
     
-    static private function parseValue(&$object) {
+    static private function parseValue($object) {
         switch($object->type()) {
             case QJsonValue::Bool:
                 return $object->toBool();

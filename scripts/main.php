@@ -52,8 +52,6 @@ class PQCenter extends QWidget {
     
     private $isQuit = false;
     
-    private $bg;
-    
     private $Btns;
     
     private $timer;
@@ -85,6 +83,7 @@ class PQCenter extends QWidget {
     
     public function __construct($parent = null) {
         parent::__construct($parent);
+        set_tr_lang(QLocale::system()->name(), 'languages');
         if($this->isOneInstance('PQCenter')) {
             $this->initComponents();
         } else {
@@ -119,7 +118,7 @@ class PQCenter extends QWidget {
     
     private function initComponents() {
         /** Получаем QDesktopWidget */
-        $this->desktop = QApplication::desktop();
+        $this->desktop = qApp()->desktop();
         /** Отлавливаем изменение рабочей области и изменияем геометрию в соответствии */
         $this->desktop->onWorkAreaResized = function($sender) {
             $this->calculateGeometry();
@@ -127,8 +126,6 @@ class PQCenter extends QWidget {
         };
         /** Задаем заголовок для окна */
         $this->setWindowTitle(APP_TITLE);
-        /** Задаем цвет для заливки фона */
-        $this->bg = new QColor(57, 57, 57, 200);
         /** Инициализируем анимацию геометрии окна */
         $this->animator = new QPropertyAnimation($this);
         $this->animator->setTargetObject($this);
@@ -192,8 +189,9 @@ class PQCenter extends QWidget {
     
     /** @override paintEvent */
     public function paintEvent($event) {
+        $bg = new QColor(57, 57, 57, 200);
         $customPainter = new QPainter($this);
-        $customPainter->fillRect($this->rect(), $this->bg);
+        $customPainter->fillRect($this->rect(), $bg);
     }
 
     private function initTrayIcon() {
@@ -415,7 +413,6 @@ class PQCenter extends QWidget {
 
     private function onQuit() {
         $this->server->close();
-//        foreach($this->sockets as $socket) $socket->disconnectFromServer();
         if($this->state === self::Hidden) {
             qApp()->quit();
         }
