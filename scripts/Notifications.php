@@ -112,7 +112,7 @@ class Notifications extends QScrollArea {
         };
     }
     
-    public function add($title, $message, $level) {
+    public function notice($title, $message, $level) {
         $notice = new Notice($this->list, $title, $message, $level);
         $notice->installEventFilter($this->eventNotice);
         $uid = UID::new();
@@ -121,6 +121,10 @@ class Notifications extends QScrollArea {
         $this->list->layout()->addWidget($notice);
         qApp()->processEvents();
         $this->verticalScrollBar()->setValue($this->verticalScrollBar()->maximum());
+    }
+    
+    public function event() {
+        
     }
     
     public function removeAll() {

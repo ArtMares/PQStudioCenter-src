@@ -19,6 +19,7 @@ define('APP_TITLE', $title);
 require_once('qrc://scripts/UID.php');
 require_once('qrc://scripts/Notifications.php');
 require_once('qrc://scripts/Notice.php');
+require_once('qrc://scripts/Json.php');
 
 class PQCenter extends QWidget {
     
@@ -255,7 +256,6 @@ class PQCenter extends QWidget {
     private function initLocalSocket() {
         /** Инициализируем локальный сокет сервер */
         $this->server = new QLocalServer($this);
-//        $this->server->setMaxPendingConnections(2);
         /** Запускаем сервер с именем */
         $this->server->listen('PQCenter');
         /** Задаем обработчик для новых соединений */
@@ -263,7 +263,6 @@ class PQCenter extends QWidget {
     }
     
     public function slot_incomingConnection() {
-        qDebug(__METHOD__);
         $socket = $this->server->nextPendingConnection();
         $socket->connect(SIGNAL('readyRead()'), $this, SLOT('slot_readData()'));
         $socket->connect(SIGNAL('disconnected()'), $this, SLOT('slot_onDisconnect()'));
@@ -271,11 +270,8 @@ class PQCenter extends QWidget {
     }
 
     public function slot_readData($socket) {
-        qDebug(__METHOD__);
         $data = $socket->readAll();
-        qDenug($data);
-//        $data = json_decode($data);
-//        $this->addNotice($data->title, $data->massge, $data->level);
+        $this->parseMsg($data);
     }
     
     public function slot_onDisconnect($socket) {
@@ -419,6 +415,7 @@ class PQCenter extends QWidget {
 
     private function onQuit() {
         $this->server->close();
+        foreach($this->sockets as $socket) $socket->close();
         if($this->state === self::Hidden) {
             qApp()->quit();
         }
@@ -428,13 +425,28 @@ class PQCenter extends QWidget {
         }
     }
     
-    private function addNotice($title, $message, $level) {
-        if($this->state === self::Hidden) $this->timer->start();
-        $this->notifications->add($title, $message, $level);
+    private function parseMsg($str) {
+        $data = (new Json())->read($str);
+        if(!is_null($data)) {
+            $this->determineType($data);
+        }
     }
     
-    private function showNotice($title, $message, $level) {
-//        if()
+    private function determineType($data) {
+        if(isset($data['type'])) {
+            switch($data['type']) {
+                case 'notice':
+                    $this->Notice($data);
+                    break;
+            }
+        }
+    }
+    
+    private function Notice($data) {
+        if(isset($data['title']) && isset($data['message']) && isset($data['level'])) {
+            if ($this->state === self::Hidden) $this->timer->start();
+            $this->notifications->notice($data['title'], $data['message'], $data['level']);
+        }
     }
 }
 

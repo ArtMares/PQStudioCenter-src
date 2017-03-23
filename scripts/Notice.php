@@ -18,13 +18,25 @@ class Notice extends QWidget {
     
     protected $state;
     
+    public $title;
+    
+    public $message;
+    
+    public $level;
+    
+    public $source;
+    
     public function __construct($parent = null, string $title, string $message, int $level = 0x02) {
         parent::__construct($parent);
         
-        $this->initComponents($title, $message, $level);
+        $this->title = $title;
+        $this->message = $message;
+        $this->level = $level;
+        
+        $this->initComponents();
     }
     
-    public function initComponents($title, $message, $level) {
+    public function initComponents() {
         $this->state = self::Unread;
         $this->objectName = 'Notice';
     
@@ -62,7 +74,7 @@ class Notice extends QWidget {
     
         $icon = new QLabel($this);
         $icon->setMaximumWidth(20);
-        switch($level) {
+        switch($this->level) {
             case self::Success:
                 $pixmap = new QIcon(':/success.svg');
                 $icon->setPixmap($pixmap->pixmap(20, 20));
@@ -84,24 +96,24 @@ class Notice extends QWidget {
                 $icon->setPixmap($pixmap->pixmap(20, 20));
         }
     
-        $labelTitle = new QLabel($this);
-        $labelTitle->text = $this->cut($title, 75);
-        $labelTitle->wordWrap = true;
-        $labelTitle->objectName = 'Title';
+        $title = new QLabel($this);
+        $title->text = $this->cut($this->title, 75);
+        $title->wordWrap = true;
+        $title->objectName = 'Title';
     
-        $labelMsg = new QLabel($this);
-        $labelMsg->wordWrap = true;
-        $labelMsg->text = $this->cut($message, 250);
+        $msg = new QLabel($this);
+        $msg->wordWrap = true;
+        $msg->text = $this->cut($this->message, 250);
     
         $row = 0;
         $this->layout()->addWidget($icon, $row, 0);
         $this->layout()->setAlignment($icon, Qt::AlignTop);
-        $this->layout()->addWidget($labelTitle, $row, 1);
+        $this->layout()->addWidget($title, $row, 1);
         $this->layout()->addWidget($closeBtn, $row, 2);
         $this->layout()->setAlignment($closeBtn, Qt::AlignTop);
     
         $row++;
-        $this->layout()->addWidget($labelMsg, $row, 0, 1, 3);
+        $this->layout()->addWidget($msg, $row, 0, 1, 3);
     }
     
     protected function cut(string $str, int $len) : string {
