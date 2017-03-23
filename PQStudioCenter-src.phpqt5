@@ -80,6 +80,7 @@
         "widgets:QScrollBar",
         "network:QAbstractSocket",
         "network:QLocalServer",
+        "network:QLocalSocket",
         "plastiq:PQEventFilter"
     ]
 }

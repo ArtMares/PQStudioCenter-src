@@ -259,29 +259,28 @@ class PQCenter extends QWidget {
         /** Запускаем сервер с именем */
         $this->server->listen('PQCenter');
         /** Задаем обработчик для новых соединений */
-        $this->server->onNewConnection = function() {
-            /** Получаем соединение */
-            $socket = $this->server->nextPendingConnection();
-            /** Задаем обработчик для чтения принимаемых данных от соединения */
-            $socket->onReadyRead = function($sender) {
-                /** Читаем получаемые данные */
-                $this->slot_readData($sender);
-            };
-            /** Задаем обработчик закрытия соединения со стороны клиента */
-            $socket->onDisconnected = function($sender) {
-                $index = array_search($sender, $this->sockets);
-                if($index !== false) unset($this->sockets[$index]);
-            };
-            /** Добавляем соедиение в хранилище */
-            $this->sockets[] = $socket;
-        };
+        $this->server->connect(SIGNAL('newConnection()'), $this, SLOT('slot_incomingConnection()'));
+    }
+    
+    public function slot_incomingConnection() {
+        qDebug(__METHOD__);
+        $socket = $this->server->nextPendingConnection();
+        $socket->connect(SIGNAL('readyRead()'), $this, SLOT('slot_readData()'));
+        $socket->connect(SIGNAL('disconnected()'), $this, SLOT('slot_onDisconnect()'));
+        $this->sockets[] = $socket;
     }
 
-    private function slot_readData($socket) {
+    public function slot_readData($socket) {
+        qDebug(__METHOD__);
         $data = $socket->readAll();
         qDenug($data);
-        $data = json_decode($data);
-        $this->addNotice($data->title, $data->massge, $data->level);
+//        $data = json_decode($data);
+//        $this->addNotice($data->title, $data->massge, $data->level);
+    }
+    
+    public function slot_onDisconnect($socket) {
+        $index = array_search($socket, $this->sockets);
+        if($index !== false) unset($this->sockets[$index]);
     }
 
     private function getResolution() : array {
